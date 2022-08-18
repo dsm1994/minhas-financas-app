@@ -1,6 +1,5 @@
 import React from "react"
 import AuthService from "../app/service/authService"
-import ApiService from "../app/apiservice"
 import jwt from "jsonwebtoken"
 
 export const AuthContext = React.createContext()
@@ -10,16 +9,19 @@ const AuthProvider = AuthContext.Provider
 class ProvedorAutenticacao extends React.Component {
     state = {
         usuarioAutenticado: null,
-        isAutenticado: false
+        isAutenticado: false,
+        isLoading: true
     }
 
     iniciarSessao = (tokenDTO) => {
         const token = tokenDTO.token
         const claims = jwt.decode(token)
-        console.log(claims)
-        ApiService.registrarToken(token)
-        AuthService.logar(tokenDTO)
-        this.setState({isAutenticado: true, usuarioAutenticado: tokenDTO})
+        const usuario = {
+            id: claims.userid,
+            nome: claims.nome
+        }
+        AuthService.logar(usuario, token)
+        this.setState({isAutenticado: true, usuarioAutenticado: usuario})
     }
 
     encerrarSessao = () => {
@@ -27,7 +29,27 @@ class ProvedorAutenticacao extends React.Component {
         this.setState({isAutenticado: false, usuarioAutenticado: null})
     }
 
+    async componentDidMount() {
+        const isAutenticado = AuthService.isUsuarioAutenticado()
+        console.log("Está autenticado?", isAutenticado)
+        if(isAutenticado) {
+            const usuario = AuthService.refreshSession()
+            this.setState({isAutenticado: true, usuarioAutenticado: usuario, isLoading: false})
+        } else {
+            this.setState(previousState => {
+                return {
+                    ... previousState,
+                    isLoading: false
+                }
+            })
+        }
+    }
+
     render() {
+        if(this.state.isLoading) {
+            return null
+        }
+
         const contexto = {
             usuarioAutenticado: this.state.usuarioAutenticado,
             isAutenticado: this.state.isAutenticado,

@@ -14,6 +14,7 @@ class Home extends React.Component {
 
     componentDidMount() {
         const usuarioLogado = this.context.usuarioAutenticado
+        console.log(usuarioLogado)
         this.usuarioService.obterSaldoPorUsuario(usuarioLogado.id)
                 .then(response => {
                     this.setState({saldo: response.data})
